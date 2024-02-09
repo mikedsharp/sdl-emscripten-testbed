@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <SDL_mixer.h>
+#include <SDL_image.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -18,6 +19,9 @@ struct context
 	int r;
 	int g;
 	int b;
+	SDL_Rect renderLocation = {0, 0, 640, 480};
+	SDL_Rect clipRect = {0, 0, 640, 480};
+	SDL_Texture *titleScreen;
 };
 
 void handleEvents(context *ctx, SDL_Event *e)
@@ -50,6 +54,7 @@ void mainloop(void *arg)
 	handleEvents(ctx, &e);
 	SDL_SetRenderDrawColor(ctx->renderer, 255, 255, 255, 255);
 	SDL_RenderClear(ctx->renderer);
+	SDL_RenderCopy(ctx->renderer, ctx->titleScreen, &ctx->clipRect, &ctx->renderLocation);
 	SDL_SetRenderDrawColor(ctx->renderer, ctx->r, ctx->g, ctx->b, 255);
 	SDL_RenderFillRect(ctx->renderer, &ctx->purpleSquare);
 	SDL_RenderPresent(ctx->renderer);
@@ -83,8 +88,10 @@ int main(int argc, char *args[])
 	SDL_SetRenderDrawColor(ctx.renderer, 255, 0, 0, 255);
 	Thing *thing = new Thing(34);
 	thing->printNumber();
-	Mix_Chunk *m_theme = Mix_LoadWAV("audio/theme.wav");
+	Mix_Chunk *m_theme = Mix_LoadWAV("assets/audio/theme.wav");
 	int canPlay = Mix_PlayChannel(-1, m_theme, 1);
+	SDL_Surface *spriteSurface = IMG_Load("assets/img/titlescreen.png");
+	ctx.titleScreen = SDL_CreateTextureFromSurface(ctx.renderer, spriteSurface);
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop_arg(mainloop, &ctx, -1, 1);
@@ -94,47 +101,12 @@ int main(int argc, char *args[])
 	while (quit == false)
 	{
 		handleEvents(&ctx, &e);
-		// while (SDL_PollEvent(&e))
-		// {
-		// 	if (e.type == SDL_QUIT)
-		// 	{
-		// 		quit = true;
-		// 	}
-		// 	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LEFT)
-		// 	{
-		// 		Mix_Chunk *m_theme = Mix_LoadWAV("audio/theme.wav");
-		// 		int canPlay = Mix_PlayChannel(0, m_theme, 1);
-		// 		if (canPlay != -1)
-		// 		{
-		// 			ctx.b = 0;
-		// 			ctx.g = 255;
-		// 			ctx.r = 0;
-		// 		}
-		// 		else
-		// 		{
-		// 			ctx.b = 0;
-		// 			ctx.g = 0;
-		// 			ctx.r = 255;
-		// 		}
-		// 		ctx.purpleSquare.x -= 10;
-		// 	}
-		// 	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RIGHT)
-		// 	{
-		// 		ctx.purpleSquare.x += 10;
-		// 	}
-		// 	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_UP)
-		// 	{
-		// 		ctx.purpleSquare.y -= 10;
-		// 	}
-		// 	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_DOWN)
-		// 	{
-		// 		ctx.purpleSquare.y += 10;
-		// 	}
-		// }
 		mainloop(&ctx);
 	}
 #endif
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	IMG_Quit();
+	Mix_Quit();
 	return 0;
 }
